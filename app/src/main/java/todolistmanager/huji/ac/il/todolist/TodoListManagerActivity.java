@@ -24,13 +24,17 @@ public class TodoListManagerActivity extends ActionBarActivity {
     MyAdapter adapter;
     int indexToDelete;
     int i;
+    DB todo_db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        todo_db = new DB(this, "ToDoList", null, 1);
+        todo_db.todo_db = todo_db.getWritableDatabase();
         setContentView(R.layout.activity_todo_list_manager);
         items = (ListView) findViewById(R.id.lstTodoItems);
         listData = new ArrayList<ItemLine>();
+        firstListViewUpdate();
 
         //on item long click
         items.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
@@ -49,7 +53,9 @@ public class TodoListManagerActivity extends ActionBarActivity {
                 builder.setPositiveButton("Delete Item", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        todo_db.deleteTask(listData.get(position).title,listData.get(position).expDate);
                         listData.remove(position);
+                        listData = todo_db.getAllTasks();
                         adapter = new MyAdapter(getApplicationContext(), R.layout.itemlayout, listData);
                         items.setAdapter(adapter);
                         dialog.cancel();
@@ -116,7 +122,8 @@ public class TodoListManagerActivity extends ActionBarActivity {
 
     public void addItem(String task, long date) {
         if (!task.equals("")) {
-            listData.add(new ItemLine(task, date));
+            todo_db.saveTask(task, date);
+            listData = todo_db.getAllTasks();
             adapter = new MyAdapter(getApplicationContext(), R.layout.itemlayout, listData);
             items.setAdapter(adapter);
         }
@@ -136,5 +143,13 @@ public class TodoListManagerActivity extends ActionBarActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+    public void firstListViewUpdate(){
+        listData = todo_db.getAllTasks();
+        if (listData.size()<1){
+            return;
+        }
+        adapter = new MyAdapter(getApplicationContext(), R.layout.itemlayout, listData);
+        items.setAdapter(adapter);
     }
 }
